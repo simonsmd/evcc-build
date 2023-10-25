@@ -38,7 +38,7 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: "evcc-io/evcc"
 
@@ -87,7 +87,7 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: "evcc-io/evcc"
           ref: ${{ needs.check_upstream.outputs.new_tag }}
