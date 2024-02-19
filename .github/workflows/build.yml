@@ -3,7 +3,6 @@ name: Build
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  GO_VERSION: ^1.21
 
 on:
   schedule: # runs on the default branch: master
@@ -48,7 +47,10 @@ jobs:
             if grep -Fq "if !sponsor.IsAuthorized()" "$file"; then
               echo "$file"
               sed -i "/if !sponsor.IsAuthorized()/,+2d" "$file"
-              sed -i '\#evcc/util/sponsor#d' "$file"
+              # keep sponsor import in tesla.go file
+              if [ "$file" != "./vehicle/tesla.go" ] ; then
+                  sed -i '\#evcc/util/sponsor#d' "$file"
+              fi
               # remove unused import in modbus proxy file
               if [ "$file" = "./server/modbus/proxy.go" ]; then
                 sed -i '\#evcc/api#d' "$file"
@@ -99,7 +101,10 @@ jobs:
             if grep -Fq "if !sponsor.IsAuthorized()" "$file"; then
               echo "$file"
               sed -i "/if !sponsor.IsAuthorized()/,+2d" "$file"
-              sed -i '\#evcc/util/sponsor#d' "$file"
+              # keep sponsor import in tesla.go file
+              if [ "$file" != "./vehicle/tesla.go" ] ; then
+                  sed -i '\#evcc/util/sponsor#d' "$file"
+              fi
               # remove unused import in modbus proxy file
               if [ "$file" = "./server/modbus/proxy.go" ]; then
                 sed -i '\#evcc/api#d' "$file"
