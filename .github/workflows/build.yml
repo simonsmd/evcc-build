@@ -27,7 +27,8 @@ jobs:
         name: check commmits/tags within the last 24h
         run: |
           test -z "$(git rev-list --after="24 hours" master)" && echo "build_nightly=false" | tee -a $GITHUB_OUTPUT
-          echo "new_tag=$(git --no-pager log --tags --after "24 hours" --simplify-by-decoration --pretty="%D" --max-count 1 | sed "s/tag: //")" | tee -a $GITHUB_OUTPUT
+          git --no-pager log --tags --after "24 hours" --simplify-by-decoration --pretty="%D" --max-count 1
+          echo "new_tag=$(git --no-pager log --tags --after "24 hours" --simplify-by-decoration --pretty="%D" --max-count 1  | grep -Po "\d+(.\d+(.\d+)?)?" | head -1)" | tee -a $GITHUB_OUTPUT
 
   build-push-nightly-image:
     name: Build nightly image
