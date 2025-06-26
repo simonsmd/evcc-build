@@ -15,7 +15,8 @@ jobs:
     name: Check latest commit/tag
     outputs:
       build_nightly: ${{ steps.check.outputs.build_nightly }}
-      new_tag: ${{ steps.check.outputs.new_tag }}
+      newest_release: ${{ steps.check.outputs.newest_release }}
+      newest_build: ${{ steps.check.outputs.newest_build }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,11 +25,11 @@ jobs:
           fetch-tags: true
 
       - id: check
-        name: check commmits/tags within the last 24h
+        name: check for new commits tags on upstream and fetch latest container build
         run: |
           test -z "$(git rev-list --after="24 hours" master)" && echo "build_nightly=false" | tee -a $GITHUB_OUTPUT
-          git --no-pager log --tags --after "24 hours" --simplify-by-decoration --pretty="%D" --max-count 1
-          echo "new_tag=$(git --no-pager log --tags --after "24 hours" --simplify-by-decoration --pretty="%D" --max-count 1  | grep -Po "\d+(.\d+(.\d+)?)?" | head -1)" | tee -a $GITHUB_OUTPUT
+          echo "newest_release=$(git --no-pager log --tags --simplify-by-decoration --pretty="%D" --max-count 1  | grep -Po "\d+(.\d+(.\d+)?)?" | head -1)" | tee -a $GITHUB_OUTPUT
+          echo "newest_build=$(curl -s https://ghcr.io/v2/simonsmd/evcc-build/evcc/tags/list -H "Authorization: Bearer $(echo $GITHUB_TOKEN | base64)" | jq -r '.tags | map(select(. != "latest" and . != "nightly")) | sort | reverse | .[0]')" | tee -a $GITHUB_OUTPUT
 
   build-push-nightly-image:
     name: Build nightly image
@@ -85,7 +86,7 @@ jobs:
   build-push-release-image:
     name: Build release image
     needs: check_upstream
-    if: ${{ needs.check_upstream.outputs.new_tag != '' }}
+    if: ${{ needs.check_upstream.outputs.newest_release != needs.check_upstream.outputs.newest_build || (github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -93,7 +94,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: "evcc-io/evcc"
-          ref: ${{ needs.check_upstream.outputs.new_tag }}
+          ref: ${{ needs.check_upstream.outputs.newest_release }}
 
       - id: remove-sponsor-check
         name: Remove sponsor check
