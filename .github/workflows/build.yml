@@ -29,7 +29,9 @@ jobs:
         run: |
           test -z "$(git rev-list --after="24 hours" master)" && echo "build_nightly=false" | tee -a $GITHUB_OUTPUT
           echo "newest_release=$(git --no-pager log --tags --simplify-by-decoration --pretty="%D" --max-count 1  | grep -Po "\d+(.\d+(.\d+)?)?" | head -1)" | tee -a $GITHUB_OUTPUT
-          echo "newest_build=$(curl -s https://ghcr.io/v2/simonsmd/evcc-build/evcc/tags/list -H "Authorization: Bearer $(echo $GITHUB_TOKEN | base64)" | jq -r '.tags | map(select(. != "latest" and . != "nightly")) | sort | reverse | .[0]')" | tee -a $GITHUB_OUTPUT
+          # anonymous pull token, the package is public
+          token=$(curl -sf "https://ghcr.io/token?scope=repository:${IMAGE_NAME}/evcc:pull" | jq -r .token)
+          echo "newest_build=$(curl -sf https://ghcr.io/v2/${IMAGE_NAME}/evcc/tags/list -H "Authorization: Bearer $token" | jq -r '.tags | map(select(test("^\\d+\\.\\d+\\.\\d+$"))) | sort_by(split(".") | map(tonumber)) | last')" | tee -a $GITHUB_OUTPUT
 
   build-push-nightly-image:
     name: Build nightly image
